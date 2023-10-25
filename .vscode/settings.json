@@ -52,7 +52,12 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "cinttypes": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "charconv": "cpp",
+        "chrono": "cpp",
+        "format": "cpp",
+        "span": "cpp",
+        "variant": "cpp"
     },
     "todo-tree.highlights.customHighlight": {
         "TODO": {
@@ -65,6 +70,9 @@
             "foreground": "#c5cfd9"
         },
         "OPTIONAL": {
+            "foreground": "#c5cfd9"
+        },
+        "BUG": {
             "foreground": "#c5cfd9"
         },
 

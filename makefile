@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -I./include
+CXXFLAGS = -std=c++23 -I./include --debug
 LDLIBS = -lssl -lcrypto
 
 SRC_DIR = src
@@ -17,6 +17,8 @@ $(SRC_DIR)/%.o: $(SRC_DIR)/%.cc
 clean:
 	rm -f main $(OBJS)
 
+run: 
+	./main
 
 
 

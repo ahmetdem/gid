@@ -1,26 +1,35 @@
-#ifndef COMMANDS_H
-#define COMMANDS_H
+#ifndef COMMANDS_HPP
+#define COMMANDS_HPP
 
 #include <iostream>
 #include <filesystem>
 #include <fstream>
 
-// TODO Implement The Commands Here 
+// TODO: Implement The Commands Here 
 
-/* IDEA - init: Initialize a new repository.
+/* NOTE: - init: Initialize a new repository.
     - add: Stage changes for commit.
     - commit: Create a new commit with staged changes.
     - push: Push local changes to a remote repository.
-    - pull: Fetch changes from a remote repository.
-    - branch: Manage branches (create, delete, switch).
-    - merge: Merge changes from one branch into another.
     - status: Show the status of files in the working directory.
     - log: Display commit history. */
 
 namespace fs = std::filesystem;
 
-void initCommand() {
-    const fs::path CURRENT_PATH = std::filesystem::current_path();
+/**Initializes a new Git repository in the current working directory.
+ *
+ * This function creates the necessary directory structure and files for a Git
+ * repository, including the `.gid` directory, `config`, `HEAD`, `index`, and
+ * `description` files.
+ */
+inline void initCommand() {
+
+    // OPTIONAL Add various things in config and description.
+
+    std::string AUTHOR_NAME ;
+    std::string COMMIT_MESSAGE ;
+
+    const fs::path CURRENT_PATH = fs::current_path();
     const fs::path GID_DIRECTORY = CURRENT_PATH / ".gid";
 
     // TODO: Check if a repository already exists at 'GID_DIRECTORY'.
@@ -55,15 +64,8 @@ void initCommand() {
 
     std::cout << "Repository is Created Successfully." << std::endl;
 
-
-    // TODO: Prepare the object storage for version control.
-    // This involves creating necessary directories within the `.gid` directory.
-    // Establish a clear structure for storing version control objects, branches, and metadata.
-    // Implement a hashing algorithm to generate unique identifiers for objects.
-    // Ensure the hashing algorithm can handle object content.
-
     // TODO: Create the initial commit representing the state of the repository at initialization.
-    // Include metadata in the initial commit, such as the author's name, email, commit message, and a timestamp.
+    // Include metadata in the initial commit, such as the author's name, commit message, and a timestamp.
 
     // TODO: Store the initial commit object in the object storage.
     // Generate a unique hash for the initial commit using the implemented hashing algorithm.
@@ -77,5 +79,10 @@ void initCommand() {
 
     // TODO: Display a completion message on the console, informing the user that the repository has been initialized successfully.
 }
+
+inline void commitCommand () {}
+inline void addCommand() {}
+inline void statusCommand() {}
+inline void logCommand() {}
 
 #endif

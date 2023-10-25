@@ -6,8 +6,6 @@
 #include <functional>
 #include <filesystem>
 
-namespace fs = std::filesystem;
-
 class CommandLineParser {
 public:
 
