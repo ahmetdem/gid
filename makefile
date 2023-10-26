@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -I./include --debug
+CXXFLAGS = -std=c++23 -I./include
 LDLIBS = -lssl -lcrypto
 
 SRC_DIR = src

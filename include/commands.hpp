@@ -4,6 +4,8 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include "objects.hpp"
+#include "global.hpp"
 
 // TODO: Implement The Commands Here 
 
@@ -26,8 +28,9 @@ inline void initCommand() {
 
     // OPTIONAL Add various things in config and description.
 
-    std::string AUTHOR_NAME ;
-    std::string COMMIT_MESSAGE ;
+    // TODO find a way to get author name and commit message.
+    std::string AUTHOR_NAME = "Ahmet Yusuf Demir" ;
+    std::string COMMIT_MESSAGE = "Initial Commit!!";
 
     const fs::path CURRENT_PATH = fs::current_path();
     const fs::path GID_DIRECTORY = CURRENT_PATH / ".gid";
@@ -38,7 +41,7 @@ inline void initCommand() {
         return;
     }
     
-    // TODO: Create a directory for the repository at 'GID_DIRECTORY'.
+    // Create a directory for the repository at 'GID_DIRECTORY'.
     fs::create_directory(GID_DIRECTORY); fs::create_directory(GID_DIRECTORY / "objects");
 
     // Create the config file (adjust file content as needed)
@@ -62,22 +65,19 @@ inline void initCommand() {
     std::ofstream descriptionFile(descriptionPath);
     descriptionFile.close();
 
+
+    Tree initialTree = createTree(CURRENT_PATH);
+    Commit initialCommit(AUTHOR_NAME, COMMIT_MESSAGE, serializeObject<Tree>(initialTree));
+
+    /* TODO: Store the Objects in ./gid/objects folder with first 
+     two chars of hashes being subdirectory name and rest being 
+    the name of the file that contains content of the objects. */
+
+    storeObject<Tree>(initialTree);
+    storeObject<Commit>(initialCommit);
+
+
     std::cout << "Repository is Created Successfully." << std::endl;
-
-    // TODO: Create the initial commit representing the state of the repository at initialization.
-    // Include metadata in the initial commit, such as the author's name, commit message, and a timestamp.
-
-    // TODO: Store the initial commit object in the object storage.
-    // Generate a unique hash for the initial commit using the implemented hashing algorithm.
-
-    // TODO: Set the default branch (e.g., `main` or `master`) and point it to the initial commit.
-    // Ensure that the branch is appropriately referenced in the repository's metadata.
-
-    // TODO: Store any additional metadata related to branches, commits, and other repository information within the `.gid` directory.
-
-    // TODO: Implement error-handling logic to address scenarios like invalid input, filesystem errors, or directory conflicts.
-
-    // TODO: Display a completion message on the console, informing the user that the repository has been initialized successfully.
 }
 
 inline void commitCommand () {}
