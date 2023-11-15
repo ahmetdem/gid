@@ -19,6 +19,7 @@ int main(int argc, char const *argv[])
     parser.add_custom_option(initOption);
     parser.parse(argc, argv);
 
+    std::cout << "ahmet" << std::endl;
     return 0;
 }
 
