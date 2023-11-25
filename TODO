@@ -1,3 +1,5 @@
+TODO: Fix the program so that tree objects inside a tree object is stored.
 
-1.Fix the problem when storing the tree objects and learn 
-if they will be stored seperatly or in the same file.
+TODO: Write names of the objects when storing them. 
+
+TODO: STORE THE TREES WITH THE SAME HASH.

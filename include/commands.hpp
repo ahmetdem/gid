@@ -73,8 +73,8 @@ inline void initCommand() {
      two chars of hashes being subdirectory name and rest being 
     the name of the file that contains content of the objects. */
 
-    storeObject<Tree>(initialTree);
     storeObject<Commit>(initialCommit);
+    storeObject<Tree>(initialTree);
 
 
     std::cout << "Repository is Created Successfully." << std::endl;

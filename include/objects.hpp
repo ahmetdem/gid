@@ -49,7 +49,7 @@ struct Commit {
      * @return A string containing the combined attributes of the Commit.
      */
     std::string getContent () const {
-        return "commit:" + authorName + ";" + timestamp + ";" + message + ";" + treeHash;
+        return "commit:\n" + authorName + ";" + timestamp + ";" + message + ";" + treeHash;
     }
 
     // /**
@@ -64,9 +64,9 @@ struct Commit {
 private:
     // Function to get the current time as a string
     std::string getCurrentTime() {
-        std::time_t t = std::time(nullptr);
+        time_t t = time(nullptr);
         char buffer[80];
-        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&t));
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localtime(&t));
         return buffer;
     }
 }; 
@@ -105,8 +105,8 @@ struct Tree {
      * @param sha The SHA-1 hash of the object.
      * @param type The type of the object (blob or tree).
      */
-	void addEntry(const std::string& name, const std::string& sha1, const std::string& type) {
-		entries.push_back(TreeEntry(name, sha1, type));
+	void addEntry(const std::string& name, const std::string& sha, const std::string& type) {
+		entries.push_back(TreeEntry(name, sha, type));
     }
 
     std::string getContent() const {
@@ -114,8 +114,7 @@ struct Tree {
         for (const TreeEntry& entry : entries) {
             content += entry.name + " " + entry.sha + " " + entry.type + "\n";
         }
-        return "tree:" + content;
-
+        return "tree:\n" + content;
     }
 
     // /**
@@ -141,7 +140,7 @@ struct Blob {
     Blob(const std::string& content) : content(content) {}
 
     std::string getContent() const {
-        return "blob:" + content;
+        return "blob:\n" + content;
     }
 
 

@@ -11,6 +11,9 @@
 
 namespace fs = std::filesystem;
 
+template <typename T>
+inline void storeObject(const T& object);
+
 // TODO: Write the Functions To use Right Here. 
 // Write the Globals Here.
 
@@ -29,168 +32,6 @@ inline std::string calculateSHA256(const std::string& message) {
     delete[] digest;
 
     return result;
-}
-
-/**
- *  Function to create a Blob from a file 
- * 
- * @param filename The Filename to be Turned into a Blob Object
- * @return The blob object of the file.
- */
-inline Blob createBlob(const fs::path& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        // Handle the case where the file cannot be opened
-        throw std::runtime_error("Failed to open file.");
-    }
-
-    std::string content;
-    std::string line;
-    while (std::getline(file, line)) {
-        content += line + "\n"; // Read the file line by line
-    }
-
-    file.close();
-
-    return Blob(content);
-}
-
-
-/**
- * Store an object of a specific type in the .gid objects folder.
- *
- * This function stores an object of a specified type (Tree, Commit, or Blob) in the
- * .gid objects folder by serializing the object's content and saving it with its hash
- * as the filename. If the object with the same hash already exists, it will not be
- * overwritten.
- *
- * @tparam T The type of the object to store (Tree, Commit, or Blob).
- * @param object The object to be stored.
- */
-template <typename T>
-inline void storeObject(const T& object) {
-    // OPTIONAL: Implement an Unlimited object parameter ? 
-
-    const fs::path objectsPath = fs::current_path() / ".gid/objects"; 
-
-    if (!fs::exists(objectsPath)) {
-        std::cerr << "The .gid Files are Corrupted. Objects folder can not be found. Stop." << std::endl;
-        return;
-    }
-    
-    std::string content = object.getContent();
-
-    // OPTIONAL Optimize the code a bit.
-    if constexpr (std::is_same<T, Tree>::value) {
-        // Store the Tree object 
-
-        // FIXME The problem when storing Trees.
-        std::string hashedNameTree = serializeObject<Tree>(object);
-        fs::path treePath = objectsPath / hashedNameTree.substr(0, 2) / hashedNameTree.substr(2);
-
-        // Create the directory if does not exist.
-        fs::create_directories(objectsPath.parent_path());
-
-        if (!fs::exists(treePath)) {
-            // BUG See what the binary mode is.
-            std::ofstream file(treePath, std::ios::binary);
-
-            if (file.fail())
-                std::cerr << "Error creating Tree file: " << treePath << std::endl;
-
-            file.write(content.c_str(), content.size());
-            file.close();
-
-        }
-
-    } else if constexpr (std::is_same<T, Commit>::value) {
-        // Store the Commit Object
-        std::string hashedNameCommit = serializeObject<Commit>(object);
-        fs::path commitPath = objectsPath / hashedNameCommit.substr(0, 2) / hashedNameCommit.substr(2);
-        
-        // Create the directory if does not exist.
-        fs::create_directories(commitPath.parent_path());
-
-        if (!fs::exists(commitPath)) {
-            // BUG See what the binary mode is.
-            std::ofstream file(commitPath, std::ios::binary);
-
-            if (file.fail())
-                std::cerr << "Error creating Commit file: " << commitPath << std::endl;
-
-            file.write(content.c_str(), content.size());
-            file.close();
-        }
-
-    } else if constexpr (std::is_same<T, Blob>::value) {
-        // Store the Blob Object
-        std::string hashedNameBlob = serializeObject<Blob>(object);
-        fs::path blobPath = objectsPath / hashedNameBlob.substr(0, 2) / hashedNameBlob.substr(2);
-
-        std::cout << content << std::endl;
-        // Create the directory if does not exist.
-        fs::create_directories(blobPath.parent_path());
-
-        if (!fs::exists(blobPath)) {
-            // BUG See what the binary mode is.
-            std::ofstream file(blobPath, std::ios::binary);
-            file.write(content.c_str(), content.size());
-            file.close();
-        }
-    }
-}
-
-
-/**
- * Recursively generates a tree object to represent the directory structure
- * and its contents starting from the specified directory.
- *
- * @param directoryPath The path to the root directory to create a tree from.
- *
- * @returns A 'Tree' object representing the directory structure and its contents.
- *          The 'Tree' contains entries for both files and subdirectories, with
- *          each entry including its name, SHA-2 hash, and type (blob or tree).
- */
-Tree createTree(const fs::path& directoryPath) {
-    
-    Tree tree;
-    // TODO: Add an Option to exclude some type of files.
-    // Iterate over the files and subdirectories in the specified directory
-
-    for (auto const& dir_entry : fs::recursive_directory_iterator(directoryPath))
-    {
-
-        if (dir_entry.path().string().find(".git") != std::string::npos) 
-            continue;
-
-        if (fs::is_regular_file(dir_entry)) {
-            // It's a file, create a blob object
-            // Read the content of the file (you'll need to implement this)
-
-            std::ifstream file(dir_entry.path(), std::ios::binary);
-            std::stringstream buffer;
-            buffer << file.rdbuf();
-            std::string content = buffer.str();
-
-            // Compute the SHA-1 hash for the content
-            std::string hashedNameBlob = calculateSHA256(content);
-
-            // Add an entry for the file to the tree
-            tree.addEntry(dir_entry.path().filename(), hashedNameBlob, "blob");
-        } else if (fs::is_directory(dir_entry)) {
-            // It's a directory, call the function recursively
-            // Compute the SHA-1 hash for the directory's name (for simplicity)
-
-            std::string hashedNameTree = calculateSHA256(dir_entry.path().filename().string());
-
-            // Create a subtree by calling the function recursively
-            Tree subTree = createTree(dir_entry.path().string());
-
-            // Add an entry for the subdirectory to the tree
-            tree.addEntry(dir_entry.path().filename(), hashedNameTree, "tree");
-        }
-    }
-    return tree;
 }
 
 /**
@@ -225,5 +66,166 @@ inline std::string serializeObject(const T& object) {
 
     return calculateSHA256(ss.str());
 }
+
+/**
+ *  Function to create a Blob from a file 
+ * 
+ * @param filePath The filePath to be Turned into a Blob Object
+ * @return The blob object of the file.
+ */
+inline Blob createBlob(const fs::path& filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        // Handle the case where the file cannot be opened
+        throw std::runtime_error("Failed to open file.");
+    }
+
+    std::string content;
+    std::string line;
+    while (std::getline(file, line)) {
+        content += line + "\n"; // Read the file line by line
+    }
+
+    file.close();
+
+    return Blob(content);
+
+}
+
+/**
+ * Recursively generates a tree object to represent the directory structure
+ * and its contents starting from the specified directory.
+ *
+ * @param directoryPath The path to the root directory to create a tree from.
+ *
+ * @returns A 'Tree' object representing the directory structure and its contents.
+ *          The 'Tree' contains entries for both files and subdirectories, with
+ *          each entry including its name, SHA-2 hash, and type (blob or tree).
+ */
+Tree createTree(const fs::path& directoryPath) {
+    
+    Tree tree;
+    // TODO: Add an Option to exclude some type of files.
+    // Iterate over the files and subdirectories in the specified directory
+
+    const fs::path objectsPath = fs::current_path() / ".gid/objects";
+
+    for (auto const& dir_entry : fs::directory_iterator(directoryPath))
+    {
+        // Exclude the .git files (duh).
+        if (dir_entry.path().string().find(".git") != std::string::npos ||
+            dir_entry.path().string().find(".gid") != std::string::npos) 
+            continue;
+
+        std::cout << dir_entry << "\n"; 
+
+        if (fs::is_regular_file(dir_entry)) {
+            // It's a file, create a blob object
+            // Read the content of the file (you'll need to implement this)
+
+            Blob blob { createBlob(dir_entry) };
+            std::string blobContent = blob.getContent();
+
+            // Compute the SHA-1 hash for the content
+            std::string hashedNameBlob = serializeObject<Blob>(blob);                
+            fs::path blobPath = objectsPath / hashedNameBlob.substr(0, 2) / hashedNameBlob.substr(2);
+
+            // Store Blob objects right here.
+            fs::create_directories(blobPath.parent_path());
+
+            if (!fs::exists(blobPath)) {
+                // BUG See what the binary mode is.
+                std::ofstream file(blobPath, std::ios::binary);
+                file.write(blobContent.c_str(), blobContent.size());
+                file.close();
+            }
+            // Add an entry for the file to the tree
+            tree.addEntry(dir_entry.path().filename(), hashedNameBlob, "blob");
+
+        } else {
+            // It's a directory, call the function recursively
+            // Compute the SHA-1 hash for the directory's name (for simplicity)
+            std::string hashedNameTree = calculateSHA256(dir_entry.path().filename().string());
+            
+            // Create a subtree by calling the function recursively
+            Tree subTree = createTree(dir_entry.path().string());
+            storeObject<Tree>(subTree);
+
+            // Add an entry for the subdirectory to the tree
+            tree.addEntry(dir_entry.path().filename(), hashedNameTree, "tree");
+        }
+    }
+    return tree;
+}
+
+/**
+ * Store an object of a specific type in the .gid objects folder.
+ *
+ * This function stores an object of a specified type (Tree, Commit, or Blob) in the
+ * .gid objects folder by serializing the object's content and saving it with its hash
+ * as the filename. If the object with the same hash already exists, it will not be
+ * overwritten.
+ *
+ * @tparam T The type of the object to store (Tree, Commit, or Blob).
+ * @param object The object to be stored.
+ */
+template <typename T>
+inline void storeObject(const T& object) {
+    // OPTIONAL: Implement an Unlimited object parameter ? 
+
+    const fs::path curPath = fs::current_path();
+    const fs::path objectsPath = curPath / ".gid/objects"; 
+
+    if (!fs::exists(objectsPath)) {
+        std::cerr << "The .gid Files are Corrupted. Objects folder can not be found. Stop." << std::endl;
+        return;
+    }
+    
+    std::string content = object.getContent();
+
+    // OPTIONAL Optimize the code a bit.
+    // TODO Change ifs to switch case.
+    if constexpr (std::is_same<T, Tree>::value) {
+        // Store the Tree object 
+        // FIXME The problem when storing Trees.
+
+        std::string hashedNameTree = serializeObject<Tree>(object);
+        fs::path treePath = objectsPath / hashedNameTree.substr(0, 2) / hashedNameTree.substr(2);
+
+        // Create the directory if does not exist.
+        fs::create_directories(treePath.parent_path());
+
+        if (!fs::exists(treePath)) {
+            // BUG See what the binary mode is.
+            std::ofstream file(treePath, std::ios::binary);
+
+            if (file.fail())
+                std::cerr << "Error creating Tree file: " << treePath << std::endl;
+
+            file.write(content.c_str(), content.size());
+            file.close();
+        }
+
+    } else if constexpr (std::is_same<T, Commit>::value) {
+        // Store the Commit Object
+        std::string hashedNameCommit = serializeObject<Commit>(object);
+        fs::path commitPath = objectsPath / hashedNameCommit.substr(0, 2) / hashedNameCommit.substr(2);
+        
+        // Create the directory if does not exist.
+        fs::create_directories(commitPath.parent_path());
+
+        if (!fs::exists(commitPath)) {
+            // BUG See what the binary mode is.
+            std::ofstream file(commitPath, std::ios::binary);
+
+            if (file.fail())
+                std::cerr << "Error creating Commit file: " << commitPath << std::endl;
+
+            file.write(content.c_str(), content.size());
+            file.close();
+        }
+    }
+}
+
 
 #endif

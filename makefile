@@ -15,7 +15,10 @@ $(SRC_DIR)/%.o: $(SRC_DIR)/%.cc
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 clean:
-	rm -f main $(OBJS)
+	rm -f main $(OBJS) 
+
+gid:
+	rm -r .gid
 
 run: 
 	./main
