@@ -5,16 +5,18 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <filesystem>
 #include <type_traits>
+#include <fstream>
 #include "SHA256.hpp"
 #include "objects.hpp"
 
 namespace fs = std::filesystem;
 
 template <typename T>
-inline void storeObject(const T& object);
+inline void storeObject(const T& object, const std::string& hashed);
 
-// TODO: Write the Functions To use Right Here. 
+// TODO: Write the Functions to use Right Here. 
 // Write the Globals Here.
 
 /**
@@ -87,7 +89,6 @@ inline Blob createBlob(const fs::path& filePath) {
     }
 
     file.close();
-
     return Blob(content);
 
 }
@@ -117,7 +118,6 @@ Tree createTree(const fs::path& directoryPath) {
             dir_entry.path().string().find(".gid") != std::string::npos) 
             continue;
 
-        std::cout << dir_entry << "\n"; 
 
         if (fs::is_regular_file(dir_entry)) {
             // It's a file, create a blob object
@@ -146,10 +146,11 @@ Tree createTree(const fs::path& directoryPath) {
             // It's a directory, call the function recursively
             // Compute the SHA-1 hash for the directory's name (for simplicity)
             std::string hashedNameTree = calculateSHA256(dir_entry.path().filename().string());
+            std::cout << "FOLDER: " << dir_entry << " ::: " << hashedNameTree << std::endl; 
             
             // Create a subtree by calling the function recursively
             Tree subTree = createTree(dir_entry.path().string());
-            storeObject<Tree>(subTree);
+            storeObject<Tree>(subTree, hashedNameTree);
 
             // Add an entry for the subdirectory to the tree
             tree.addEntry(dir_entry.path().filename(), hashedNameTree, "tree");
@@ -170,7 +171,7 @@ Tree createTree(const fs::path& directoryPath) {
  * @param object The object to be stored.
  */
 template <typename T>
-inline void storeObject(const T& object) {
+inline void storeObject(const T& object, const std::string& hashed) {
     // OPTIONAL: Implement an Unlimited object parameter ? 
 
     const fs::path curPath = fs::current_path();
@@ -189,7 +190,10 @@ inline void storeObject(const T& object) {
         // Store the Tree object 
         // FIXME The problem when storing Trees.
 
-        std::string hashedNameTree = serializeObject<Tree>(object);
+        std::cout << content << std::endl;
+
+        // FIXME: Fix the problem where because hash is 0 char it cant take substr of hash. 
+        std::string hashedNameTree = (hashed.empty()) ? serializeObject<Tree>(object) : hashed;
         fs::path treePath = objectsPath / hashedNameTree.substr(0, 2) / hashedNameTree.substr(2);
 
         // Create the directory if does not exist.

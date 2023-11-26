@@ -65,17 +65,15 @@ inline void initCommand() {
     std::ofstream descriptionFile(descriptionPath);
     descriptionFile.close();
 
-
     Tree initialTree = createTree(CURRENT_PATH);
     Commit initialCommit(AUTHOR_NAME, COMMIT_MESSAGE, serializeObject<Tree>(initialTree));
 
-    /* TODO: Store the Objects in ./gid/objects folder with first 
+    /* Store the Objects in ./gid/objects folder with first 
      two chars of hashes being subdirectory name and rest being 
     the name of the file that contains content of the objects. */
 
-    storeObject<Commit>(initialCommit);
-    storeObject<Tree>(initialTree);
-
+    storeObject<Commit>(initialCommit, "");
+    storeObject<Tree>(initialTree, "");
 
     std::cout << "Repository is Created Successfully." << std::endl;
 }
