@@ -13,8 +13,6 @@ int main(int argc, char const *argv[])
 {   
     CommandLineParser parser;
     CommandLineParser::Option initOption ("init", "Initialize the Repository.", initCommand);
-  
-    // std::cout << fs::current_path() << std::endl;
 
     parser.add_custom_option(initOption);
     parser.parse(argc, argv);

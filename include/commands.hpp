@@ -65,6 +65,10 @@ inline void initCommand() {
     std::ofstream descriptionFile(descriptionPath);
     descriptionFile.close();
 
+    fs::path commitsPath = GID_DIRECTORY / "commits";
+    std::ofstream commitsFile(commitsPath);
+    commitsFile.close();
+
     Tree initialTree = createTree(CURRENT_PATH);
     Commit initialCommit(AUTHOR_NAME, COMMIT_MESSAGE, serializeObject<Tree>(initialTree));
 
@@ -74,8 +78,6 @@ inline void initCommand() {
 
     storeObject<Commit>(initialCommit, "");
     storeObject<Tree>(initialTree, initialCommit.treeHash);
-
-    std::cout << initialCommit.treeHash << std::endl;
 
     std::cout << "Repository is Created Successfully." << std::endl;
 }

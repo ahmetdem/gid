@@ -32,8 +32,8 @@ struct Commit {
     ) 
         : authorName(authorName),
           message(message),
-          treeHash(treeHash) {
-            
+          treeHash(treeHash) 
+    {
         // Set the timestamp to the current time
         timestamp = getCurrentTime();
     }
@@ -43,12 +43,12 @@ struct Commit {
      *
      * This function returns a string that combines the Commit's attributes, including
      * the author's name, timestamp, commit message, and the SHA-2 hash of the top-level
-     * tree object, separated by ";" delimiters.
+     * tree object, separated by a new line.
      *
      * @return A string containing the combined attributes of the Commit.
      */
     std::string getContent () const {
-        return "commit:\n" + authorName + "\n" + timestamp + "\n" + message + "\n" + treeHash;
+        return "commit:\nname:" + authorName + "\ntimestamp:" + timestamp + "\nmessage:" + message + "\ntreehash:" + treeHash;
     }
 
 private:

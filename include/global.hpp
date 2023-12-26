@@ -223,6 +223,14 @@ inline void storeObject(const T& object, const std::string& hashed) {
 
             file.write(content.c_str(), content.size());
             file.close();
+
+            std::ofstream commit_file(curPath / ".gid/commits", std::ios::app);
+
+            if (file.fail())
+                std::cerr << "Error opening Commits Folder!" << std::endl;
+
+            commit_file << hashedNameCommit << "\n";
+            commit_file.close();
         }
     }
 }
