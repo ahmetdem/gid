@@ -23,7 +23,6 @@ struct Commit {
     std::string timestamp;      // Date and time of the commit
     std::string message;        // Commit message
     std::string treeHash;       // SHA-2 hash of the top-level tree object
-    // Add more fields as needed
 
     // Constructor
     Commit(
@@ -49,17 +48,8 @@ struct Commit {
      * @return A string containing the combined attributes of the Commit.
      */
     std::string getContent () const {
-        return "commit:\n" + authorName + ";" + timestamp + ";" + message + ";" + treeHash;
+        return "commit:\n" + authorName + "\n" + timestamp + "\n" + message + "\n" + treeHash;
     }
-
-    // /**
-    //  * Returns a serialized representation of the Commit object.
-    //  *
-    //  * @return A string containing the serialized data of the Commit object.
-    //  */
-    // std::string hashed() const {
-    //     return serializeObject<Commit>(*this);
-    // }
 
 private:
     // Function to get the current time as a string
@@ -116,15 +106,6 @@ struct Tree {
         }
         return "tree:\n" + content;
     }
-
-    // /**
-    //  * Returns a serialized representation of the Tree object.
-    //  *
-    //  * @return A string containing the serialized data of the Tree object.
-    //  */
-    // std::string hashed() const {
-    //     return serializeObject<Tree>(*this);
-    // }
 };
 
 /**
@@ -134,24 +115,14 @@ struct Tree {
  * unit of data in version control systems and can be used to store file contents.
  */
 struct Blob {
-    std::string content;
+    std::string content, name;
 
     // Constructor
-    Blob(const std::string& content) : content(content) {}
+    Blob(const std::string& content, std::string name) : content(content), name(name) {}
 
     std::string getContent() const {
-        return "blob:\n" + content;
+        return "blob: " + name + "\n" + content;
     }
-
-
-    // /**
-    //  * Returns a serialized representation of the Blob object.
-    //  *
-    //  * @return A string containing the serialized data of the Blob object.
-    //  */
-    // std::string hashed() const {
-    //     return serializeObject<Blob>(*this);
-    // }
 };
 
 

@@ -77,20 +77,21 @@ inline std::string serializeObject(const T& object) {
  */
 inline Blob createBlob(const fs::path& filePath) {
     std::ifstream file(filePath);
+
     if (!file.is_open()) {
         // Handle the case where the file cannot be opened
         throw std::runtime_error("Failed to open file.");
     }
 
-    std::string content;
-    std::string line;
+    std::string content, line;
+
     while (std::getline(file, line)) {
         content += line + "\n"; // Read the file line by line
     }
 
     file.close();
-    return Blob(content);
-
+    
+    return Blob(content, filePath.filename().string());
 }
 
 /**
@@ -103,7 +104,7 @@ inline Blob createBlob(const fs::path& filePath) {
  *          The 'Tree' contains entries for both files and subdirectories, with
  *          each entry including its name, SHA-2 hash, and type (blob or tree).
  */
-Tree createTree(const fs::path& directoryPath) {
+inline Tree createTree(const fs::path& directoryPath) {
     
     Tree tree;
     // TODO: Add an Option to exclude some type of files.
@@ -146,7 +147,6 @@ Tree createTree(const fs::path& directoryPath) {
             // It's a directory, call the function recursively
             // Compute the SHA-1 hash for the directory's name (for simplicity)
             std::string hashedNameTree = calculateSHA256(dir_entry.path().filename().string());
-            std::cout << "FOLDER: " << dir_entry << " ::: " << hashedNameTree << std::endl; 
             
             // Create a subtree by calling the function recursively
             Tree subTree = createTree(dir_entry.path().string());
@@ -188,11 +188,7 @@ inline void storeObject(const T& object, const std::string& hashed) {
     // TODO Change ifs to switch case.
     if constexpr (std::is_same<T, Tree>::value) {
         // Store the Tree object 
-        // FIXME The problem when storing Trees.
 
-        std::cout << content << std::endl;
-
-        // FIXME: Fix the problem where because hash is 0 char it cant take substr of hash. 
         std::string hashedNameTree = (hashed.empty()) ? serializeObject<Tree>(object) : hashed;
         fs::path treePath = objectsPath / hashedNameTree.substr(0, 2) / hashedNameTree.substr(2);
 
@@ -212,7 +208,7 @@ inline void storeObject(const T& object, const std::string& hashed) {
 
     } else if constexpr (std::is_same<T, Commit>::value) {
         // Store the Commit Object
-        std::string hashedNameCommit = serializeObject<Commit>(object);
+        std::string hashedNameCommit = (hashed.empty()) ? serializeObject<Commit>(object) : hashed;
         fs::path commitPath = objectsPath / hashedNameCommit.substr(0, 2) / hashedNameCommit.substr(2);
         
         // Create the directory if does not exist.

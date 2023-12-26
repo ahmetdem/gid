@@ -27,8 +27,8 @@ namespace fs = std::filesystem;
 inline void initCommand() {
 
     // OPTIONAL Add various things in config and description.
-
     // TODO find a way to get author name and commit message.
+
     std::string AUTHOR_NAME = "Ahmet Yusuf Demir" ;
     std::string COMMIT_MESSAGE = "Initial Commit!!";
 
@@ -73,13 +73,48 @@ inline void initCommand() {
     the name of the file that contains content of the objects. */
 
     storeObject<Commit>(initialCommit, "");
-    storeObject<Tree>(initialTree, "");
+    storeObject<Tree>(initialTree, initialCommit.treeHash);
+
+    std::cout << initialCommit.treeHash << std::endl;
 
     std::cout << "Repository is Created Successfully." << std::endl;
 }
 
-inline void commitCommand () {}
-inline void addCommand() {}
+inline void addCommand() {
+
+    /*  Identify Changes:
+            - Compare the current state of the working directory with the state of the index (staging area) to identify changes.
+        
+        Update Index:
+            - Add or update entries in the index for new, modified, or deleted files.
+            - The index is a representation of the next commit.
+        
+        Optional: Show Changes:
+            - Optionally, you might want to provide a way for the user to review the changes that are currently staged. */
+
+}
+
+inline void commitCommand () {
+
+    /*  Determine Changes:
+            - Compare the current state of the working directory with the state of the initial tree.
+            - Identify files that have been modified, added, or deleted.
+
+        Create New Blob Objects:
+            - For each modified or new file, create a new blob object and store its content.
+            
+        Create New Tree Object:
+            - Create a new tree object that represents the state of the working directory after the changes.
+            - For each file, refer to the new blob object (if it has changed) or the existing blob object (if it hasn't changed).
+
+        Create New Commit Object:
+            - Create a new commit object that refers to the new tree object.
+            - Include information such as the commit message, author, timestamp, etc. */
+
+
+}
+
+
 inline void statusCommand() {}
 inline void logCommand() {}
 

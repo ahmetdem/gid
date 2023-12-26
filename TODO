@@ -1,5 +1,3 @@
-TODO: Fix the program so that tree objects inside a tree object is stored.
+TODO: Write a code to detect changes.
 
-TODO: Write names of the objects when storing them. 
-
-TODO: STORE THE TREES WITH THE SAME HASH.
+FIXME: Commit Object Stores the wrong hash for Parent Tree.
