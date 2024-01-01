@@ -98,7 +98,7 @@ template <typename T> inline std::string serializeObject(const T &object) {
   } else if constexpr (std::is_same<T, Blob>::value) {
     // Serialize blob object data
     ss << object.content;
-   }
+  }
 
   return General::calculateSHA256(ss.str());
 }
@@ -141,7 +141,10 @@ inline Tree createTree(const fs::path &directoryPath) {
 
   Tree tree;
   // TODO: Add an Option to exclude some type of files.
-  // Iterate over the files and subdirectories in the specified directory
+  // Iterate over the files and subdirectories in the specified director
+
+  // Parse the lines.
+  // Compare it with the previous.y
 
   const fs::path objectsPath = fs::current_path() / ".gid/objects";
 
@@ -275,14 +278,36 @@ inline void storeObject(const T &object, const std::string &hashed) {
 
 namespace Add {
 
-// TODO: Add operation parameter to keep track of what type of change it is.
-inline void storeIndex(const std::string& changed_hash) {
-  std::ofstream index_file("./.gid/index", std::ios::app);
-  index_file << changed_hash << "\n";
+// Tell the compiler the function exists.
+inline void
+identify_changes_and_update_index_recursive(const std::string &hash);
 
-  index_file.close();
+// TODO: Add operation parameter to keep track of what type of change it is.
+inline bool isHashStored(const std::string &hash) {
+  std::ifstream indexFile("./.gid/index");
+  std::string storedHash;
+
+  while (std::getline(indexFile, storedHash)) {
+    if (storedHash == hash) {
+      indexFile.close();
+      return true;
+    }
+  }
+
+  indexFile.close();
+  return false;
 }
 
+// Function to store a hash in the index file if it hasn't been stored yet
+inline void storeIndex(const std::string &changed_hash) {
+  // TODO: Maybe implement a set to find the stored hashes if the program is
+  // very slow. Check if the hash is not already stored
+  if (!isHashStored(changed_hash)) {
+    std::ofstream index_file("./.gid/index", std::ios::app);
+    index_file << changed_hash << "\n";
+    index_file.close();
+  }
+}
 
 inline void identify_changes_and_update_index() {
   // Get the hash of the general tree object, Go to commits file, from there to
@@ -294,7 +319,8 @@ inline void identify_changes_and_update_index() {
     std::cerr << "Error opening commits folder." << std::endl;
 
   // TODO: Implement the Algorithm to get commits here. Just use something like
-  // getRecent() in here. FIX: You probably will need to get the last hash not the first.
+  // getRecent() in here. FIX: You probably will need to get the last hash not
+  // the first.
   while (std::getline(file, line)) {
     masterCommitHash = line;
     break;
@@ -325,7 +351,6 @@ inline void identify_changes_and_update_index() {
   std::ifstream masterTreeFile(masterTreePath, std::ios::binary);
   bool isFirstLine = true;
   while (std::getline(masterTreeFile, line)) {
-    
     if (isFirstLine) {
       isFirstLine = false;
       continue;
@@ -337,22 +362,66 @@ inline void identify_changes_and_update_index() {
     if (type == "blob") {
       std::string hashToCompare;
 
-      if (fs::exists(file_path)) { 
-        hashToCompare = serializeObject<Blob>( createBlob(file_path) ); 
-
+      if (fs::exists(file_path)) {
+        hashToCompare = serializeObject<Blob>(createBlob(file_path));
       } else {
-        // TODO: Handle the case where a file is deleted or renamed. 
-        // Ultimately make a OPT variable to store the type of the change.  
+        // TODO: Handle the case where a file is deleted or renamed.
+        // Ultimately make a OPT variable to store the type of the change.
+        Add::storeIndex(hash);
         continue;
       }
 
       // if not equal, store it inside the index file.
       if (hashToCompare != hash) {
         Add::storeIndex(hash);
-      } 
+      }
     } else {
-      // it's a tree object, go to the hash of the tree object and call the Function
-      // TODO: identify_changes_and_update_index_recursive(file_path, hash);
+      // it's a tree object, go to the hash of the tree object and call the
+      // Function
+      Add::identify_changes_and_update_index_recursive(hash);
+    }
+  }
+}
+
+inline void
+identify_changes_and_update_index_recursive(const std::string &hash) {
+  // Get inside the file_path and get the hashes.
+  fs::path objectsPath = "./.gid/objects";
+  fs::path tree_path = objectsPath / hash.substr(0, 2) / hash.substr(2);
+
+  std::ifstream treeFile(tree_path, std::ios::binary);
+  bool isFirstLine = true;
+  std::string line;
+
+  while (std::getline(treeFile, line)) {
+    if (isFirstLine) {
+      isFirstLine = false;
+      continue;
+    }
+
+    auto [file_path, hash, type] = General::parseLine(line, ' ');
+
+    // If it's a file, simply calc another hash and compare with the previous
+    if (type == "blob") {
+      std::string hashToCompare;
+
+      if (fs::exists(file_path)) {
+        hashToCompare = serializeObject<Blob>(createBlob(file_path));
+      } else {
+        // TODO: Handle the case where a file is deleted or renamed.
+        // Ultimately make a OPT variable to store the type of the change.
+        Add::storeIndex(hash);
+        continue;
+      }
+
+      // if not equal, store it inside the index file.
+      if (hashToCompare != hash) {
+        Add::storeIndex(hash);
+      }
+    } else {
+      // it's a tree object, go to the hash of the tree object and call the
+      // Function
+      Add::identify_changes_and_update_index_recursive(hash);
     }
   }
 }

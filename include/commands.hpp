@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iostream>
 
-// TODO: Implement The Commands Here
+// TODO: Implement The Commands Here For better Organization:
 
 /* NOTE: - init: Initialize a new repository.
     - add: Stage changes for commit.

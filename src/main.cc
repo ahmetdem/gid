@@ -17,6 +17,8 @@ int main(int argc, char const *argv[])
   CommandLineParser::Option initOption ("init", "Initialize the Repository.", initCommand);
   CommandLineParser::Option addOption ("add", "Adds changes to the stage aka. index file.", addCommand);
 
+
+
   parser.add_custom_option(initOption);
   parser.add_custom_option(addOption);
 
