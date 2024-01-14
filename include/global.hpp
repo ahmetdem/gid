@@ -285,9 +285,15 @@ identify_changes_and_update_index_recursive(const std::string &hash);
 // TODO: Add operation parameter to keep track of what type of change it is.
 inline bool isHashStored(const std::string &hash) {
   std::ifstream indexFile("./.gid/index");
-  std::string storedHash;
+  std::string line;
 
-  while (std::getline(indexFile, storedHash)) {
+  while (std::getline(indexFile, line)) {
+    std::istringstream iss(line);
+    std::string storedPath, storedHash;
+
+    // Extract path and hash from the line
+    iss >> storedPath >> storedHash;
+
     if (storedHash == hash) {
       indexFile.close();
       return true;
@@ -299,14 +305,19 @@ inline bool isHashStored(const std::string &hash) {
 }
 
 // Function to store a hash in the index file if it hasn't been stored yet
-inline void storeIndex(const std::string &changed_hash) {
+inline void storeIndex(const std::string &changed_hash,
+                       const fs::path &file_path) {
   // TODO: Maybe implement a set to find the stored hashes if the program is
-  // very slow. Check if the hash is not already stored
+  // very slow.
+
   if (!isHashStored(changed_hash)) {
     std::ofstream index_file("./.gid/index", std::ios::app);
-    index_file << changed_hash << "\n";
+    index_file << file_path.string() << " " << changed_hash << "\n";
     index_file.close();
-  }
+
+    std::cout << "A Change is Made in: " << file_path.string() << " \n";
+
+  } 
 }
 
 inline void identify_changes_and_update_index() {
@@ -367,13 +378,13 @@ inline void identify_changes_and_update_index() {
       } else {
         // TODO: Handle the case where a file is deleted or renamed.
         // Ultimately make a OPT variable to store the type of the change.
-        Add::storeIndex(hash);
+        Add::storeIndex(hash, file_path);
         continue;
       }
 
       // if not equal, store it inside the index file.
       if (hashToCompare != hash) {
-        Add::storeIndex(hash);
+        Add::storeIndex(hash, file_path);
       }
     } else {
       // it's a tree object, go to the hash of the tree object and call the
@@ -410,26 +421,20 @@ identify_changes_and_update_index_recursive(const std::string &hash) {
       } else {
         // TODO: Handle the case where a file is deleted or renamed.
         // Ultimately make a OPT variable to store the type of the change.
-        Add::storeIndex(hash);
+        Add::storeIndex(hash, file_path);
         continue;
       }
 
       // if not equal, store it inside the index file.
       if (hashToCompare != hash) {
-        Add::storeIndex(hash);
+        Add::storeIndex(hash, file_path);
       }
     } else {
       // it's a tree object, go to the hash of the tree object and call the
-      // Function
+      // function
       Add::identify_changes_and_update_index_recursive(hash);
     }
   }
-}
-
-inline void show_changes() {
-  /*
-   * - Get the diff of the Changes and Print them to the user.
-   * */
 }
 } // namespace Add
 

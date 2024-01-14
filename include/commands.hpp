@@ -88,15 +88,10 @@ inline void initCommand() {
 }
 
 inline void addCommand() {
-  // Identify Changes:
-  // - Calculate and compare the hashes of the files with the previous hashes.
-  // - Store the different ones inside the Index file.
+
+  // update index file with the hashes of the files that the changes made.
   Add::identify_changes_and_update_index();
 
-  // Optional: Show Changes:
-  // - Optionally, you might want to provide a way for the user to review
-  //   the changes that are currently staged.
-  Add::show_changes();
 }
 
 inline void commitCommand() {
