@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <tuple>
 
 // TODO: Implement The Commands Here For better Organization:
 
@@ -95,26 +97,51 @@ inline void addCommand() {
 }
 
 inline void commitCommand() {
+  // Get the content of the index file.
+  std::ifstream indexFile("./.gid/index");
+  std::string line;
 
-  /*  Determine Changes:
-          - Compare the current state of the working directory with the state of
-     the initial tree.
-          - Identify files that have been modified, added, or deleted.
+  std::vector<std::tuple<std::string, std::string>> oldNewHash;
 
-      Create New Blob Objects:
-          - For each modified or new file, create a new blob object and store
-     its content.
+  while (std::getline(indexFile, line)) {
+    std::istringstream iss(line);
+    std::string storedPath, storedHash, newHash, op;
 
-      Create New Tree Object:
-          - Create a new tree object that represents the state of the working
-     directory after the changes.
-          - For each file, refer to the new blob object (if it has changed) or
-     the existing blob object (if it hasn't changed).
+    // Extract path and hash from the line
+    iss >> storedPath >> storedHash >> newHash >> op; 
+    
+    if (op == "DELETED") {
+      // The file is deleted. 
+      
+    } else {
+      // The file is changed.
 
-      Create New Commit Object:
-          - Create a new commit object that refers to the new tree object.
-          - Include information such as the commit message, author, timestamp,
-     etc. */
+    }
+  }
+
+  indexFile.close();
+ 
+  fs::path masterTreePath = General::getMasterTreePath();
+  std::cout << masterTreePath << std::endl;
+
+  // std::ifstream masterTreeFile(masterTreePath, std::ios::binary);
+  // bool isFirstLine = true;
+  //
+  // while (std::getline(masterTreeFile, line)) {
+  //   if (isFirstLine) {
+  //     isFirstLine = false;
+  //     continue;
+  //   }
+  //
+  //   auto [file_path, hash, type] = General::parseLine(line, ' ');
+  //     
+  //   if (type == "blob") {
+  //      
+  //
+  //   } else {
+  //
+  //   }
+  // }
 }
 
 inline void statusCommand() {}

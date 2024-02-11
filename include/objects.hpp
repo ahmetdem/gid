@@ -45,7 +45,7 @@ struct Commit {
    */
   std::string getContent() const {
     return "commit:\nname:" + authorName + "\ntimestamp:" + timestamp +
-           "\nmessage:" + message + "\ntreehash:" + treeHash;
+           "\nmessage:" + message + "\ntreehash:" + treeHash + "\n";
   }
 
 private:

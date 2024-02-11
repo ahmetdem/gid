@@ -17,8 +17,11 @@ namespace fs = std::filesystem;
 template <typename T>
 inline void storeObject(const T &object, const std::string &hashed);
 
-// TODO: Write the Functions to use Right Here.
-// Write the Globals Here.
+enum Operation {
+  DELETED,
+  CREATED,
+  CHANGED,
+};
 
 namespace General {
 /**
@@ -66,6 +69,48 @@ parseLine(const std::string &str, const char &indic) {
   }
 
   return result; // Return the filled tuple
+}
+
+inline fs::path getMasterTreePath() {
+  // Get the hash of the general tree object, Go to commits file, from there to
+  // the general tree object.
+  std::ifstream file("./.gid/commits", std::ios::binary);
+  std::string line, masterCommitHash, masterTreeHash;
+
+  if (file.fail())
+    std::cerr << "Error opening commits folder." << std::endl;
+
+  // TODO: Implement the Algorithm to get commits here. Just use something like
+  // getRecent() in here. 
+  // FIX: You probably will need to get the last hash not
+  // the first.
+  while (std::getline(file, line)) {
+    masterCommitHash = line;
+    break;
+  }
+  file.close();
+
+  // Go to the masterCommitHash to reach the masterTreeHash
+  const fs::path objectsPath = "./.gid/objects";
+  const fs::path masterCommitPath =
+      objectsPath / masterCommitHash.substr(0, 2) / masterCommitHash.substr(2);
+
+  std::ifstream masterCommitFile(masterCommitPath, std::ios::binary);
+  if (masterCommitFile.fail()) {
+    std::cerr << "Error opening MasterCommitFile!" << std::endl;
+  }
+
+  while (std::getline(masterCommitFile, line)) { 
+    masterTreeHash = line;
+  }
+  masterCommitFile.close();
+
+  // Go inside the masterTreeFile and loop over the hashes inside it;
+  masterTreeHash = masterTreeHash.substr(9);
+  const fs::path masterTreePath =
+      objectsPath / masterTreeHash.substr(0, 2) / masterTreeHash.substr(2);
+
+  return masterTreePath;
 }
 
 } // namespace General
@@ -306,65 +351,51 @@ inline bool isHashStored(const std::string &hash) {
 
 // Function to store a hash in the index file if it hasn't been stored yet
 inline void storeIndex(const std::string &changed_hash,
-                       const fs::path &file_path) {
-  // TODO: Maybe implement a set to find the stored hashes if the program is
-  // very slow.
+                      const fs::path &file_path, 
+                      const Operation& op = Operation::CHANGED,
+                      const std::string &newHash = " | ") {
 
   if (!isHashStored(changed_hash)) {
     std::ofstream index_file("./.gid/index", std::ios::app);
-    index_file << file_path.string() << " " << changed_hash << "\n";
+    index_file << file_path.string() << " " << changed_hash << " " << newHash << " ";
+    
+    switch (op) {
+      case Operation::CREATED:
+        index_file << "CREATED\n";
+        break;
+
+      case Operation::CHANGED:
+        index_file << "CHANGED\n";
+        break;
+
+      case Operation::DELETED:
+        index_file << "DELETED\n";
+        break;
+
+      default:
+        std::cerr << "Unknown Operation!" << std::endl; 
+        break;
+    }
+
     index_file.close();
-
     std::cout << "A Change is Made in: " << file_path.string() << " \n";
-
   } 
 }
 
+inline void identify_added_file() {
+  
+}
+
 inline void identify_changes_and_update_index() {
-  // Get the hash of the general tree object, Go to commits file, from there to
-  // the general tree object.
-  std::ifstream file("./.gid/commits", std::ios::binary);
-  std::string line, masterCommitHash, masterTreeHash;
+  fs::path masterTreePath = General::getMasterTreePath();
+  std::string line;
 
-  if (file.fail())
-    std::cerr << "Error opening commits folder." << std::endl;
-
-  // TODO: Implement the Algorithm to get commits here. Just use something like
-  // getRecent() in here. FIX: You probably will need to get the last hash not
-  // the first.
-  while (std::getline(file, line)) {
-    masterCommitHash = line;
-    break;
-  }
-  file.close();
-
-  // Go to the masterCommitHash to reach the masterTreeHash
-  const fs::path objectsPath = "./.gid/objects";
-  const fs::path masterCommitPath =
-      objectsPath / masterCommitHash.substr(0, 2) / masterCommitHash.substr(2);
-
-  std::ifstream masterCommitFile(masterCommitPath, std::ios::binary);
-  if (masterCommitFile.fail()) {
-    std::cerr << "Error opening MasterCommitFile!" << std::endl;
-  }
-
-  while (std::getline(masterCommitFile, line)) {
-    // TODO: Make a function to parse commit files.
-    masterTreeHash = line;
-  }
-  masterCommitFile.close();
-
-  // Go inside the masterTreeFile and loop over the hashes inside it;
-  masterTreeHash = masterTreeHash.substr(9);
-  const fs::path masterTreePath =
-      objectsPath / masterTreeHash.substr(0, 2) / masterTreeHash.substr(2);
-
-  std::ifstream masterTreeFile(masterTreePath, std::ios::binary);
+    std::ifstream masterTreeFile(masterTreePath, std::ios::binary);
   bool isFirstLine = true;
   while (std::getline(masterTreeFile, line)) {
     if (isFirstLine) {
       isFirstLine = false;
-      continue;
+      continue; 
     }
 
     auto [file_path, hash, type] = General::parseLine(line, ' ');
@@ -376,15 +407,15 @@ inline void identify_changes_and_update_index() {
       if (fs::exists(file_path)) {
         hashToCompare = serializeObject<Blob>(createBlob(file_path));
       } else {
-        // TODO: Handle the case where a file is deleted or renamed.
-        // Ultimately make a OPT variable to store the type of the change.
-        Add::storeIndex(hash, file_path);
+        std::cout << "file does not exists" << std::endl;
+        Add::storeIndex(hash, file_path, Operation::DELETED);
+
         continue;
       }
 
       // if not equal, store it inside the index file.
       if (hashToCompare != hash) {
-        Add::storeIndex(hash, file_path);
+        Add::storeIndex(hash, file_path, Operation::CHANGED, hashToCompare );
       }
     } else {
       // it's a tree object, go to the hash of the tree object and call the
@@ -421,17 +452,17 @@ identify_changes_and_update_index_recursive(const std::string &hash) {
       } else {
         // TODO: Handle the case where a file is deleted or renamed.
         // Ultimately make a OPT variable to store the type of the change.
-        Add::storeIndex(hash, file_path);
+        std::cout << "file does not exists" << std::endl;
+        Add::storeIndex(hash, file_path, Operation::DELETED);
         continue;
       }
 
       // if not equal, store it inside the index file.
       if (hashToCompare != hash) {
-        Add::storeIndex(hash, file_path);
+        Add::storeIndex(hash, file_path, Operation::CHANGED , hashToCompare);
       }
     } else {
-      // it's a tree object, go to the hash of the tree object and call the
-      // function
+
       Add::identify_changes_and_update_index_recursive(hash);
     }
   }
