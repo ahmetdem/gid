@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Wextra -I./include
+CXXFLAGS = -std=c++20 -Wall -Wextra -I./include
 
 # Libraries
 LDLIBS = -lssl -lcrypto

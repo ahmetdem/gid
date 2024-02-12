@@ -90,10 +90,8 @@ inline void initCommand() {
 }
 
 inline void addCommand() {
-
-  // update index file with the hashes of the files that the changes made.
-  Add::identify_changes_and_update_index();
-
+  const std::unordered_set<std::string> seenPaths = Add::identify_changes_and_update_index(); 
+  Add::store_added_content(seenPaths);
 }
 
 inline void commitCommand() {
@@ -108,40 +106,22 @@ inline void commitCommand() {
     std::string storedPath, storedHash, newHash, op;
 
     // Extract path and hash from the line
-    iss >> storedPath >> storedHash >> newHash >> op; 
-    
-    if (op == "DELETED") {
-      // The file is deleted. 
-      
-    } else {
-      // The file is changed.
+    iss >> op >> storedPath >> storedHash >> newHash; 
+   
+    if (!fs::exists(storedPath)) continue; 
 
+    if (op == "DELETED") {
+      std::cout << "DELETED" << storedPath << "\n";
+
+    } else if (op == "CREATED") {
+      std::cout << "CREATED" << storedPath << "\n";
+
+    } else { 
+      std::cout << "CHANGED" << storedPath << "\n";
     }
   }
 
   indexFile.close();
- 
-  fs::path masterTreePath = General::getMasterTreePath();
-  std::cout << masterTreePath << std::endl;
-
-  // std::ifstream masterTreeFile(masterTreePath, std::ios::binary);
-  // bool isFirstLine = true;
-  //
-  // while (std::getline(masterTreeFile, line)) {
-  //   if (isFirstLine) {
-  //     isFirstLine = false;
-  //     continue;
-  //   }
-  //
-  //   auto [file_path, hash, type] = General::parseLine(line, ' ');
-  //     
-  //   if (type == "blob") {
-  //      
-  //
-  //   } else {
-  //
-  //   }
-  // }
 }
 
 inline void statusCommand() {}

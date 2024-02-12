@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 
 namespace fs = std::filesystem;
 
@@ -325,21 +326,21 @@ namespace Add {
 
 // Tell the compiler the function exists.
 inline void
-identify_changes_and_update_index_recursive(const std::string &hash);
+identify_changes_and_update_index_recursive(const std::string&, std::unordered_set<std::string>&);
 
 // TODO: Add operation parameter to keep track of what type of change it is.
-inline bool isHashStored(const std::string &hash) {
+inline bool isPathStored(const std::string &path) {
   std::ifstream indexFile("./.gid/index");
   std::string line;
 
   while (std::getline(indexFile, line)) {
     std::istringstream iss(line);
-    std::string storedPath, storedHash;
+    std::string storedPath, trash;
 
     // Extract path and hash from the line
-    iss >> storedPath >> storedHash;
+    iss >> trash >> storedPath;
 
-    if (storedHash == hash) {
+    if (storedPath == path) {
       indexFile.close();
       return true;
     }
@@ -355,43 +356,55 @@ inline void storeIndex(const std::string &changed_hash,
                       const Operation& op = Operation::CHANGED,
                       const std::string &newHash = " | ") {
 
-  if (!isHashStored(changed_hash)) {
+  if (!isPathStored(file_path.string())) {
     std::ofstream index_file("./.gid/index", std::ios::app);
-    index_file << file_path.string() << " " << changed_hash << " " << newHash << " ";
-    
+        
     switch (op) {
       case Operation::CREATED:
-        index_file << "CREATED\n";
+        index_file << "CREATED ";
         break;
 
       case Operation::CHANGED:
-        index_file << "CHANGED\n";
+        index_file << "CHANGED ";
         break;
 
       case Operation::DELETED:
-        index_file << "DELETED\n";
+        index_file << "DELETED ";
         break;
 
       default:
         std::cerr << "Unknown Operation!" << std::endl; 
         break;
     }
-
+    
+    index_file << file_path.string() << " " << changed_hash << " " << newHash << "\n";
     index_file.close();
     std::cout << "A Change is Made in: " << file_path.string() << " \n";
   } 
 }
 
-inline void identify_added_file() {
-  
+inline void store_added_content(const std::unordered_set<std::string>& seenPaths) { 
+  for (auto const& dir_entry : fs::recursive_directory_iterator(fs::current_path())){
+    if (dir_entry.path().string().find(".git") != std::string::npos ||
+      dir_entry.path().string().find(".gid") != std::string::npos)
+      continue; 
+
+    if (fs::is_regular_file(dir_entry)) {
+      if (seenPaths.count(dir_entry.path().string()) <= 0) {
+        Add::storeIndex("|", dir_entry, Operation::CREATED); 
+      }
+    }
+  }
 }
 
-inline void identify_changes_and_update_index() {
-  fs::path masterTreePath = General::getMasterTreePath();
+inline std::unordered_set<std::string> identify_changes_and_update_index() {
+  fs::path masterTreePath = General::getMasterTreePath(); 
+  std::unordered_set<std::string> seenPaths = {};
   std::string line;
 
-    std::ifstream masterTreeFile(masterTreePath, std::ios::binary);
+  std::ifstream masterTreeFile(masterTreePath, std::ios::binary);
   bool isFirstLine = true;
+
   while (std::getline(masterTreeFile, line)) {
     if (isFirstLine) {
       isFirstLine = false;
@@ -406,27 +419,30 @@ inline void identify_changes_and_update_index() {
 
       if (fs::exists(file_path)) {
         hashToCompare = serializeObject<Blob>(createBlob(file_path));
+        seenPaths.insert(file_path.string());
+
       } else {
         std::cout << "file does not exists" << std::endl;
         Add::storeIndex(hash, file_path, Operation::DELETED);
-
         continue;
       }
 
       // if not equal, store it inside the index file.
       if (hashToCompare != hash) {
-        Add::storeIndex(hash, file_path, Operation::CHANGED, hashToCompare );
+        Add::storeIndex(hash, file_path, Operation::CHANGED, hashToCompare);
       }
     } else {
       // it's a tree object, go to the hash of the tree object and call the
       // Function
-      Add::identify_changes_and_update_index_recursive(hash);
+      Add::identify_changes_and_update_index_recursive(hash, seenPaths);
     }
   }
+
+  return seenPaths;
 }
 
 inline void
-identify_changes_and_update_index_recursive(const std::string &hash) {
+identify_changes_and_update_index_recursive(const std::string &hash, std::unordered_set<std::string>& seenPaths) {
   // Get inside the file_path and get the hashes.
   fs::path objectsPath = "./.gid/objects";
   fs::path tree_path = objectsPath / hash.substr(0, 2) / hash.substr(2);
@@ -449,9 +465,9 @@ identify_changes_and_update_index_recursive(const std::string &hash) {
 
       if (fs::exists(file_path)) {
         hashToCompare = serializeObject<Blob>(createBlob(file_path));
+        seenPaths.insert(file_path.string());
+
       } else {
-        // TODO: Handle the case where a file is deleted or renamed.
-        // Ultimately make a OPT variable to store the type of the change.
         std::cout << "file does not exists" << std::endl;
         Add::storeIndex(hash, file_path, Operation::DELETED);
         continue;
@@ -463,7 +479,7 @@ identify_changes_and_update_index_recursive(const std::string &hash) {
       }
     } else {
 
-      Add::identify_changes_and_update_index_recursive(hash);
+      Add::identify_changes_and_update_index_recursive(hash, seenPaths);
     }
   }
 }

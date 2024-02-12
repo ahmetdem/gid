@@ -1,3 +1,5 @@
 TODO: When i create a new file, gid add does not recognize it.
 
 - Remove the files in index if they are the same with the og ones.
+
+- If i add a created file and then delete it, the program still will commit them.
