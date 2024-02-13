@@ -6,8 +6,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 
 // TODO: Implement The Commands Here For better Organization:
 
@@ -20,6 +22,9 @@
 
 namespace fs = std::filesystem;
 
+const fs::path CURRENT_PATH = fs::current_path();
+const fs::path GID_DIRECTORY = CURRENT_PATH / ".gid";
+
 /**Initializes a new Git repository in the current working directory.
  *
  * This function creates the necessary directory structure and files for a Git
@@ -27,15 +32,12 @@ namespace fs = std::filesystem;
  * `description` files.
  */
 inline void initCommand() {
-
+ 
   // OPTIONAL Add various things in config and description.
   // TODO find a way to get author name and commit message.
 
   std::string AUTHOR_NAME = "Ahmet Yusuf Demir";
   std::string COMMIT_MESSAGE = "Initial Commit!!";
-
-  const fs::path CURRENT_PATH = fs::current_path();
-  const fs::path GID_DIRECTORY = CURRENT_PATH / ".gid";
 
   // TODO: Check if a repository already exists at 'GID_DIRECTORY'.
   if (fs::is_directory(GID_DIRECTORY)) {
@@ -95,33 +97,46 @@ inline void addCommand() {
 }
 
 inline void commitCommand() {
+  std::string line, storedPath, storedHash, newHash, op;
   // Get the content of the index file.
   std::ifstream indexFile("./.gid/index");
-  std::string line;
 
-  std::vector<std::tuple<std::string, std::string>> oldNewHash;
+  const fs::path masterTreePath { General::getMasterTreePath() };
+  const std::unordered_set<TreeEntry, TreeEntry::Hash> storedEntries { General::getStoredEntries(masterTreePath) };
+
+  const fs::path objectsPath = fs::current_path() / ".gid/objects";
+  std::unordered_set<std::string> indexPaths;
 
   while (std::getline(indexFile, line)) {
     std::istringstream iss(line);
-    std::string storedPath, storedHash, newHash, op;
 
-    // Extract path and hash from the line
     iss >> op >> storedPath >> storedHash >> newHash; 
-   
-    if (!fs::exists(storedPath)) continue; 
-
-    if (op == "DELETED") {
+    indexPaths.insert(storedPath);
+    
+    if (op == "DELETED ") {
       std::cout << "DELETED" << storedPath << "\n";
-
-    } else if (op == "CREATED") {
-      std::cout << "CREATED" << storedPath << "\n";
-
-    } else { 
-      std::cout << "CHANGED" << storedPath << "\n";
+      continue;
     }
+
+    if (!fs::exists(storedPath)) continue; 
   }
 
-  indexFile.close();
+  indexFile.close(); // Close the file before reopening in write mode
+
+  // Reopen the index file in write mode and truncate its content
+  std::ofstream indexFileClear("./.gid/index", std::ios::out | std::ios::trunc);
+  indexFileClear.close(); // Close the file after truncating
+
+  Tree tree { createTree(CURRENT_PATH, storedEntries) };
+
+  std::string treeHash { serializeObject<Tree>(tree) };
+  Commit commit("Ahmet Yusuf Demir", "Commit Test", 
+          treeHash);
+
+  storeObject<Commit>(commit, "");
+  storeObject<Tree>(tree, commit.treeHash);
+
+  std::cout << "Commit is Successfully Made!!" << std::endl;
 }
 
 inline void statusCommand() {}

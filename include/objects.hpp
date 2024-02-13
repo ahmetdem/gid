@@ -71,6 +71,25 @@ struct TreeEntry {
   TreeEntry(const std::filesystem::path &relativePath, const std::string &sha,
             const std::string &type)
       : relativePath(relativePath), sha(sha), type(type) {}
+
+  bool operator==(const TreeEntry& other) const {
+    return relativePath == other.relativePath;
+  }
+
+  // For unordered_set 
+  struct Hash
+  {
+    size_t operator()(const TreeEntry& treeEntry) const
+    {
+      // Combine hash values of relevant fields using bitwise operations:
+      std::size_t path_hash = std::hash<std::string>()(treeEntry.relativePath.extension().string());
+      std::size_t sha_hash = std::hash<std::string>()(treeEntry.sha);
+      std::size_t type_hash = std::hash<std::string>()(treeEntry.type);
+
+      // Combine hashes using a mix function to improve uniformity:
+      return ((path_hash << 5) + sha_hash) ^ type_hash;
+    }
+  }; 
 };
 
 /**

@@ -81,13 +81,8 @@ inline fs::path getMasterTreePath() {
   if (file.fail())
     std::cerr << "Error opening commits folder." << std::endl;
 
-  // TODO: Implement the Algorithm to get commits here. Just use something like
-  // getRecent() in here. 
-  // FIX: You probably will need to get the last hash not
-  // the first.
   while (std::getline(file, line)) {
     masterCommitHash = line;
-    break;
   }
   file.close();
 
@@ -112,6 +107,37 @@ inline fs::path getMasterTreePath() {
       objectsPath / masterTreeHash.substr(0, 2) / masterTreeHash.substr(2);
 
   return masterTreePath;
+}
+
+inline std::unordered_set<TreeEntry, TreeEntry::Hash> getStoredEntries(const fs::path& treePath) {
+  static std::unordered_set<TreeEntry, TreeEntry::Hash> storedEntries;
+
+  // Get all the paths from the repo. 
+  std::ifstream masterTreeFile(treePath);
+  bool isFirstLine = true; std::string line, path, hash, type;
+  const fs::path objectsPath = fs::current_path() / ".gid/objects";
+
+  while (std::getline(masterTreeFile, line)) {
+    if (isFirstLine) {
+      isFirstLine = false;
+      continue;
+    }
+
+    std::istringstream iss(line); 
+    iss >> path >> hash >> type;
+
+    if (fs::is_directory(path)) {
+      fs::path treePath =
+        objectsPath / hash.substr(0, 2) / hash.substr(2);
+
+      getStoredEntries(treePath);
+    } 
+
+    TreeEntry treeEntry (path, hash, type);
+    storedEntries.insert(treeEntry);  
+  }
+
+  return storedEntries;
 }
 
 } // namespace General
@@ -183,15 +209,13 @@ inline Blob createBlob(const fs::path &filePath) {
  * contents. The 'Tree' contains entries for both files and subdirectories, with
  *          each entry including its name, SHA-2 hash, and type (blob or tree).
  */
-inline Tree createTree(const fs::path &directoryPath) {
+inline Tree createTree(const fs::path &directoryPath,
+    const std::unordered_set<TreeEntry, TreeEntry::Hash>& storedEntries = {}) {
 
-  Tree tree;
   // TODO: Add an Option to exclude some type of files.
   // Iterate over the files and subdirectories in the specified director
 
-  // Parse the lines.
-  // Compare it with the previous.y
-
+  Tree tree;
   const fs::path objectsPath = fs::current_path() / ".gid/objects";
 
   for (auto const &dir_entry : fs::directory_iterator(directoryPath)) {
@@ -199,6 +223,14 @@ inline Tree createTree(const fs::path &directoryPath) {
     if (dir_entry.path().string().find(".git") != std::string::npos ||
         dir_entry.path().string().find(".gid") != std::string::npos)
       continue;
+
+    TreeEntry currentEntry {dir_entry.path(), "", ""}; // Create a temporary TreeEntry for comparison
+    auto it = storedEntries.find(currentEntry);
+    if (it != storedEntries.end() && fs::is_directory(dir_entry)) {
+      const TreeEntry& storedEntry = *it;
+      tree.addEntry(storedEntry.relativePath, storedEntry.sha, storedEntry.type);
+      continue;
+    }
 
     if (fs::is_regular_file(dir_entry)) {
       // It's a file, create a blob object
@@ -231,13 +263,14 @@ inline Tree createTree(const fs::path &directoryPath) {
           General::calculateSHA256(dir_entry.path().filename().string());
 
       // Create a subtree by calling the function recursively
-      Tree subTree = createTree(dir_entry.path().string());
+      Tree subTree = createTree(dir_entry.path().string(), storedEntries);
       storeObject<Tree>(subTree, hashedNameTree);
 
       // Add an entry for the subdirectory to the tree
       tree.addEntry(dir_entry.path(), hashedNameTree, "tree");
     }
   }
+
   return tree;
 }
 
@@ -331,11 +364,10 @@ identify_changes_and_update_index_recursive(const std::string&, std::unordered_s
 // TODO: Add operation parameter to keep track of what type of change it is.
 inline bool isPathStored(const std::string &path) {
   std::ifstream indexFile("./.gid/index");
-  std::string line;
+  std::string line, storedPath, trash;
 
   while (std::getline(indexFile, line)) {
     std::istringstream iss(line);
-    std::string storedPath, trash;
 
     // Extract path and hash from the line
     iss >> trash >> storedPath;
