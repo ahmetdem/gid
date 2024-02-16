@@ -16,10 +16,12 @@ int main(int argc, char const *argv[])
   CommandLineParser::Option initOption ("init", "Initialize the Repository.", initCommand);
   CommandLineParser::Option addOption ("add", "Adds changes to the stage aka. index file.", addCommand);
   CommandLineParser::Option commitOption ("commit", "Commit the changes inside the index file.", commitCommand);
-
+  CommandLineParser::Option logOption ("log", "Show the Log of the Commits", logCommand);
+ 
   parser.add_custom_option(initOption);
   parser.add_custom_option(addOption);
   parser.add_custom_option(commitOption);
+  parser.add_custom_option(logOption);
 
   if (argc == 1) {
     parser.help(); 

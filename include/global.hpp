@@ -79,7 +79,7 @@ inline fs::path getMasterTreePath() {
   std::string line, masterCommitHash, masterTreeHash;
 
   if (file.fail())
-    std::cerr << "Error opening commits folder." << std::endl;
+    std::cerr << "Error opening commits folder. \nYou probably need to initilize repository." << std::endl;
 
   while (std::getline(file, line)) {
     masterCommitHash = line;
@@ -347,7 +347,7 @@ inline void storeObject(const T &object, const std::string &hashed) {
       std::ofstream commit_file(".gid/commits", std::ios::app);
 
       if (file.fail())
-        std::cerr << "Error opening Commits Folder!" << std::endl;
+        std::cerr << "Error opening Commits Folder! \nYou probably need to initilize repository." << std::endl;
 
       commit_file << hashedNameCommit << "\n";
       commit_file.close();

@@ -101,6 +101,17 @@ inline void commitCommand() {
   // Get the content of the index file.
   std::ifstream indexFile("./.gid/index");
 
+  // Check if the index file is empty
+  if (indexFile.peek() == std::ifstream::traits_type::eof()) {
+    std::cout << "Index file is empty. No changes to commit." << std::endl;
+    indexFile.close(); // Close the file
+    return; // Exit the function without committing
+  }
+
+  // Reset the file pointer to the beginning of the file
+  indexFile.clear();
+  indexFile.seekg(0);
+
   const fs::path masterTreePath { General::getMasterTreePath() };
   const std::unordered_set<TreeEntry, TreeEntry::Hash> storedEntries { General::getStoredEntries(masterTreePath) };
 
@@ -140,6 +151,26 @@ inline void commitCommand() {
 }
 
 inline void statusCommand() {}
-inline void logCommand() {}
+
+inline void logCommand() {
+  std::ifstream commitsFile("./.gid/commits");
+  std::string commitHash;
+
+  while (std::getline(commitsFile, commitHash)) {
+    std::cout << "Commit Hash is: " << commitHash << "\n";
+
+    fs::path objectsPath = "./.gid/objects";
+    fs::path commitPath = objectsPath / commitHash.substr(0, 2) / commitHash.substr(2);
+
+    std::ifstream commitFile(commitPath);
+    std::string line;
+
+    while (std::getline(commitFile, line)) {
+      std::cout << line << "\n";  
+    }
+
+    std::cout << "\n";
+  }
+}
 
 #endif
