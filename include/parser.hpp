@@ -25,14 +25,21 @@ public:
 
   // Method to parse command-line arguments and execute associated functions
   void parse(const int argc, const char* argv[]) {
-      for (int i = 1; i < argc; ++i) {            
-          for (const Option& op : options)
-          {
-              if (argv[i] == op.name) {
-                  op.function();
-              }
-          }
+    bool parsed = false;
+
+    for (int i = 1; i < argc; ++i) {            
+      for (const Option& op : options)
+      {
+        if (argv[i] == op.name) {
+          op.function();
+          parsed = true;
+        }
       }
+    }
+
+    if (!parsed) {
+      this->help();
+    }
   }
   
   void help() {
@@ -41,7 +48,7 @@ public:
     for (const Option& op : options) {
       std::cout << op.name << ": " << op.description << "\n";
     }
-    std::cout << std::endl;
+    std::cout << "\nSee --help for more info." << std::endl;
   }
 
   
@@ -49,38 +56,38 @@ public:
 private:
 
   Option OptionFromName(const char* name) {
-      for (Option op : options)
+    for (Option op : options)
+    {
+      if ( op.name == name )
       {
-          if ( op.name == name )
-          {
-              return op;
-          }
+        return op;
       }
-      throw std::runtime_error("Option not found");
+    }
+    throw std::runtime_error("Option not found");
   }
 
   std::string stripLastWord(const std::string& path) {
       
-      int index { 0 }; 
-      for (size_t i = path.size() - 1; i > 0; i--)
+    int index { 0 }; 
+    for (size_t i = path.size() - 1; i > 0; i--)
+    {
+      if (path[i] == '/')
       {
-          if (path[i] == '/')
-          {
-              index = i;
-              break;   
-          }
+        index = i;
+        break;   
       }
-      return path.substr(index, path.size());
+    }
+    return path.substr(index, path.size());
   }
   
   std::vector<Option> options {};
 
   Option helpOption { "--help", "Display help Message", []() {
-      std::cout << "Help: Help has been arrived." << std::endl;
+    std::cout << "Help: Help has been arrived." << std::endl;
   }};
 
   Option versionOption {"--version", "Version Check", []() {
-      std::cout << "Version: Version is 9.10" << std::endl;
+    std::cout << "Version: Version is 9.10" << std::endl;
   }};
 
 };

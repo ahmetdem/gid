@@ -3,10 +3,3 @@
 - If i add a created file and then delete it, the program still will commit them.
 
 - The add command keeps working for created folders and files inside. 
-
-
-hello
-
-
-
-asşldkasdşl
