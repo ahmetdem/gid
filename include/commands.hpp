@@ -177,20 +177,22 @@ inline void retrieveCommand(const std::string& commitHash) {
 
   size_t colonPos = treeHash.find(':');
   if (colonPos != std::string::npos) {
-      // Extract the substring after ':'
-      treeHash = treeHash.substr(colonPos + 1);
+    // Extract the substring after ':'
+    treeHash = treeHash.substr(colonPos + 1);
 
-      // Trim any leading or trailing whitespace
-      treeHash.erase(0, treeHash.find_first_not_of(" \t\r\n"));
-      treeHash.erase(treeHash.find_last_not_of(" \t\r\n") + 1);
-      
-      std::cout << treeHash << std::endl;
+    treeHash.erase(0, treeHash.find_first_not_of(" \t\r\n"));
+    treeHash.erase(treeHash.find_last_not_of(" \t\r\n") + 1);
+    
+    // std::cout << treeHash << std::endl;
   }
   commitFile.close();
    
   fs::path treePath = objectsPath / treeHash.substr(0, 2) / treeHash.substr(2);
 
   createRetrievedFile(treePath);
+
+  std::cout << "Retrieved repo path: " << fs::canonical(fs::absolute("../repo")) << 
+    "\nKeep in mind that if you try to retrieve another repo, it will overwrite the repo folder." << std::endl;
 }
 
 inline void logCommand() {

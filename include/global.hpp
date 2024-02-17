@@ -517,15 +517,14 @@ identify_changes_and_update_index_recursive(const std::string &hash, std::unorde
 }
 } // namespace Add
 
-inline void retrieveBlobObject(const fs::path& blobPath, const std::string& hash) { 
+inline void retrieveBlobObject(const fs::path& blobPath) { 
   std::ifstream blobFile(blobPath);
   if (!blobFile.is_open()) {
       std::cerr << "Failed to open blob file." << std::endl;
       return;
   }
 
-  fs::path outputDir = fs::current_path() / hash.substr(0, 3), outputPath;
-  std::cout << "Retrieved Repo has been written to the: " << outputDir << std::endl;
+  fs::path outputDir = "../repo", outputPath;
 
   if (!fs::exists(outputDir)) {
     fs::create_directories(outputDir);
@@ -557,6 +556,8 @@ inline void retrieveBlobObject(const fs::path& blobPath, const std::string& hash
   }
 
   outputFile << content;
+
+  // std::cout << "Blob contents written to: " << outputPath << std::endl;
 }
 
 inline void createRetrievedFile(const fs::path& treePath) {
@@ -581,14 +582,12 @@ inline void createRetrievedFile(const fs::path& treePath) {
 
     if (type == "blob") {
       fs::path blobPath = objectsPath / hash.substr(0, 2) / hash.substr(2);
-      retrieveBlobObject(blobPath, hash); 
+      retrieveBlobObject(blobPath); 
 
     } else {
       fs::path subTreePath = objectsPath / hash.substr(0, 2) / hash.substr(2); 
       createRetrievedFile(subTreePath);
-    }
- 
-    // std::cout << "Path is: " << path << "\n";
+    } 
   } 
 }
 
