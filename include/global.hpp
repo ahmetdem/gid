@@ -517,4 +517,79 @@ identify_changes_and_update_index_recursive(const std::string &hash, std::unorde
 }
 } // namespace Add
 
+inline void retrieveBlobObject(const fs::path& blobPath, const std::string& hash) { 
+  std::ifstream blobFile(blobPath);
+  if (!blobFile.is_open()) {
+      std::cerr << "Failed to open blob file." << std::endl;
+      return;
+  }
+
+  fs::path outputDir = fs::current_path() / hash.substr(0, 3), outputPath;
+  std::cout << "Retrieved Repo has been written to the: " << outputDir << std::endl;
+
+  if (!fs::exists(outputDir)) {
+    fs::create_directories(outputDir);
+  }
+
+  std::string line, path, content;
+  bool isFirstLine = true;
+
+  while (std::getline(blobFile, line)) {
+    if (isFirstLine) {
+      std::istringstream iss(line);
+      iss >> line >> path; 
+
+      outputPath = outputPath = outputDir / fs::relative(path, fs::current_path());
+      
+      isFirstLine = false;
+      continue;
+    }
+    content += line + "\n";
+  }
+
+  fs::create_directories(outputPath.parent_path());
+
+  std::ofstream outputFile(outputPath);
+  if (!outputFile.is_open()) {
+    std::cout << outputPath << "\n";
+    std::cerr << "Failed to create output file." << std::endl;
+    return;
+  }
+
+  outputFile << content;
+}
+
+inline void createRetrievedFile(const fs::path& treePath) {
+  std::ifstream treeFile(treePath);
+  if (!treeFile.is_open()) {
+    std::cerr << "Failed to open tree file." << std::endl;
+    return;
+  }
+
+  std::string path, hash, type, line; 
+  fs::path objectsPath = "./.gid/objects";
+  bool isFirstLine = true;
+  
+  while (std::getline(treeFile, line)) {
+    if (isFirstLine) {
+      isFirstLine = false;
+      continue;
+    }
+
+    std::istringstream iss(line);
+    iss >> path >> hash >> type;
+
+    if (type == "blob") {
+      fs::path blobPath = objectsPath / hash.substr(0, 2) / hash.substr(2);
+      retrieveBlobObject(blobPath, hash); 
+
+    } else {
+      fs::path subTreePath = objectsPath / hash.substr(0, 2) / hash.substr(2); 
+      createRetrievedFile(subTreePath);
+    }
+ 
+    // std::cout << "Path is: " << path << "\n";
+  } 
+}
+
 #endif

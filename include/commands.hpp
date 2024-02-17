@@ -13,11 +13,10 @@
 
 // TODO: Implement The Commands Here For better Organization:
 
-/* NOTE: - init: Initialize a new repository.
+/* NOTE: 
+ *  - init: Initialize a new repository.
     - add: Stage changes for commit.
     - commit: Create a new commit with staged changes.
-    - push: Push local changes to a remote repository.
-    - status: Show the status of files in the working directory.
     - log: Display commit history. */
 
 namespace fs = std::filesystem;
@@ -150,7 +149,49 @@ inline void commitCommand() {
   std::cout << "Commit is Successfully Made!!" << std::endl;
 }
 
-inline void statusCommand() {}
+
+inline void retrieveCommand(const std::string& commitHash) {
+
+  fs::path objectsPath = "./.gid/objects";
+  fs::path commitPath = objectsPath / commitHash.substr(0, 2) / commitHash.substr(2);
+
+  if (!fs::exists(commitPath)) {
+    std::cerr << "Commit Path does not exist.\nUse `./gid log` to see valid commits." << std::endl;
+    return;
+  }
+
+  std::ifstream commitFile(commitPath);
+  if (!commitFile.is_open()) {
+    std::cerr << "Failed to open commit file." << std::endl;
+    return;
+  }
+
+  std::string treeHash; 
+  std::string line;
+  while (std::getline(commitFile, line)) {
+    // Store the last non-empty line
+    if (!line.empty()) {
+        treeHash = line;
+    }
+  }
+
+  size_t colonPos = treeHash.find(':');
+  if (colonPos != std::string::npos) {
+      // Extract the substring after ':'
+      treeHash = treeHash.substr(colonPos + 1);
+
+      // Trim any leading or trailing whitespace
+      treeHash.erase(0, treeHash.find_first_not_of(" \t\r\n"));
+      treeHash.erase(treeHash.find_last_not_of(" \t\r\n") + 1);
+      
+      std::cout << treeHash << std::endl;
+  }
+  commitFile.close();
+   
+  fs::path treePath = objectsPath / treeHash.substr(0, 2) / treeHash.substr(2);
+
+  createRetrievedFile(treePath);
+}
 
 inline void logCommand() {
   std::ifstream commitsFile("./.gid/commits");
